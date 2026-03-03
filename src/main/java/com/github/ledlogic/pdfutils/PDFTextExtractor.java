@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 /**
  * PDF Text Extractor - Extracts plain text from PDF files
  * and saves it to a markup document with font usage statistics.
+ * Accepts either a single PDF file or a folder containing PDF files.
  */
 public class PDFTextExtractor {
 
@@ -117,6 +118,54 @@ public class PDFTextExtractor {
             System.out.println("Unique fonts: " + fontCounts.size());
         }
     }
+
+    /**
+     * Processes all PDF files found in the given folder.
+     * Output .md and _fonts.log files are written alongside each PDF.
+     *
+     * @param folderPath Path to the folder containing PDF files
+     * @throws IOException if the folder cannot be read
+     */
+    public static void extractTextFromFolder(String folderPath) throws IOException {
+        File folder = new File(folderPath);
+
+        if (!folder.isDirectory()) {
+            throw new IOException("Not a directory: " + folderPath);
+        }
+
+        File[] pdfFiles = folder.listFiles(
+            (dir, name) -> name.toLowerCase().endsWith(".pdf")
+        );
+
+        if (pdfFiles == null || pdfFiles.length == 0) {
+            System.out.println("No PDF files found in folder: " + folderPath);
+            return;
+        }
+
+        System.out.println("Found " + pdfFiles.length + " PDF file(s) in: " + folderPath);
+        System.out.println();
+
+        int succeeded = 0;
+        int failed = 0;
+
+        for (File pdfFile : pdfFiles) {
+            String pdfPath = pdfFile.getAbsolutePath();
+            String outputPath = generateOutputPath(pdfPath);
+
+            System.out.println("Processing: " + pdfFile.getName());
+            try {
+                extractTextToMarkdown(pdfPath, outputPath);
+                succeeded++;
+            } catch (IOException e) {
+                System.err.println("  ERROR processing " + pdfFile.getName() + ": " + e.getMessage());
+                failed++;
+            }
+            System.out.println();
+        }
+
+        System.out.println("Folder processing complete.");
+        System.out.println("Succeeded: " + succeeded + "  Failed: " + failed);
+    }
     
     /**
      * Writes font usage statistics to a log file
@@ -197,23 +246,32 @@ public class PDFTextExtractor {
     
     /**
      * Main method for command-line usage.
-     * 
-     * @param args Command line arguments: [input_pdf_path]
+     * Accepts either a single PDF file or a folder of PDF files.
+     *
+     * @param args Command line arguments: [input_pdf_path_or_folder]
      */
     public static void main(String[] args) {
         if (args.length != 1) {
-            System.err.println("Usage: java PDFTextExtractor <input_pdf_path>");
-            System.err.println("Example: java PDFTextExtractor document.pdf");
-            System.err.println("Output will be saved as: document.md");
-            System.err.println("Font log will be saved as: document_fonts.log");
+            System.err.println("Usage: java PDFTextExtractor <input_pdf_path_or_folder>");
+            System.err.println("Examples:");
+            System.err.println("  java PDFTextExtractor document.pdf");
+            System.err.println("  java PDFTextExtractor /path/to/pdf/folder");
+            System.err.println("Output: each PDF produces a .md file and a _fonts.log file.");
             System.exit(1);
         }
         
-        String pdfPath = args[0];
-        String outputPath = generateOutputPath(pdfPath);
-        
+        String inputPath = args[0];
+        File input = new File(inputPath);
+
         try {
-            extractTextToMarkdown(pdfPath, outputPath);
+            if (input.isDirectory()) {
+                // Process every PDF in the folder
+                extractTextFromFolder(inputPath);
+            } else {
+                // Process a single PDF file
+                String outputPath = generateOutputPath(inputPath);
+                extractTextToMarkdown(inputPath, outputPath);
+            }
         } catch (IOException e) {
             System.err.println("Error: " + e.getMessage());
             e.printStackTrace();

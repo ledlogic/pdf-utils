@@ -44,6 +44,12 @@
       <version>${pdfbox.version}</version>
     </dependency>
 
+	<dependency>
+		<groupId>net.sourceforge.tess4j</groupId>
+		<artifactId>tess4j</artifactId>
+		<version>5.11.0</version>
+	</dependency>
+
   </dependencies>
 
   <build>
@@ -58,7 +64,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
       </plugin>
-      <!-- Create a fat/uber jar if you want a standalone CLI -->
+			<!-- Create a fat/uber jar if you want a standalone CLI -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
