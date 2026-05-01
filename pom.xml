@@ -49,6 +49,14 @@
 		<artifactId>tess4j</artifactId>
 		<version>5.11.0</version>
 	</dependency>
+	
+	<!-- Source: https://mvnrepository.com/artifact/com.github.jai-imageio/jai-imageio-jpeg2000 -->
+	<dependency>
+	    <groupId>com.github.jai-imageio</groupId>
+	    <artifactId>jai-imageio-jpeg2000</artifactId>
+	    <version>1.4.0</version>
+	    <scope>compile</scope>
+	</dependency>
 
   </dependencies>
 
