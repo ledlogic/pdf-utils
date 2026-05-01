@@ -108,36 +108,47 @@ public class PDFImgExtractor extends PDFGraphicsStreamEngine {
 	}
 
 	/**
-	 * Process all PDF files found in the given directory.
-	 * Files are sorted alphabetically before processing.
+	 * Recursively collect all PDF files under the given directory into the list.
+	 */
+	private static void collectPDFsRecursively(File dir, List<File> result) {
+		File[] entries = dir.listFiles();
+		if (entries == null) return;
+		for (File entry : entries) {
+			if (entry.isDirectory()) {
+				collectPDFsRecursively(entry, result);
+			} else if (entry.isFile() && entry.getName().toLowerCase().endsWith(".pdf")) {
+				result.add(entry);
+			}
+		}
+	}
+
+	/**
+	 * Process all PDF files found in the given directory and all subdirectories.
+	 * Files are sorted by full path alphabetically before processing.
 	 * Each PDF gets its own fresh extractor (state resets per file).
 	 */
 	private static void processPDFFolder(File folder) {
-		File[] allFiles = folder.listFiles();
-		if (allFiles == null || allFiles.length == 0) {
-			System.out.println("No files found in directory: " + folder.getAbsolutePath());
-			return;
-		}
-
 		List<File> pdfFiles = new ArrayList<>();
-		for (File f : allFiles) {
-			if (f.isFile() && f.getName().toLowerCase().endsWith(".pdf")) {
-				pdfFiles.add(f);
-			}
-		}
+		collectPDFsRecursively(folder, pdfFiles);
 
 		if (pdfFiles.isEmpty()) {
-			System.out.println("No PDF files found in directory: " + folder.getAbsolutePath());
+			System.out.println("No PDF files found under: " + folder.getAbsolutePath());
 			return;
 		}
 
-		pdfFiles.sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+		// Sort by full path so files in the same subdirectory stay together
+		pdfFiles.sort((a, b) -> a.getAbsolutePath().compareToIgnoreCase(b.getAbsolutePath()));
 
-		System.out.println("=== Folder Mode ===");
-		System.out.println("Directory: " + folder.getAbsolutePath());
+		System.out.println("=== Folder Mode (recursive) ===");
+		System.out.println("Root directory: " + folder.getAbsolutePath());
 		System.out.println("Found " + pdfFiles.size() + " PDF file(s) to process:");
+		String rootPath = folder.getAbsolutePath();
 		for (int i = 0; i < pdfFiles.size(); i++) {
-			System.out.println("  " + (i + 1) + ". " + pdfFiles.get(i).getName());
+			String relativePath = pdfFiles.get(i).getAbsolutePath();
+			if (relativePath.startsWith(rootPath)) {
+				relativePath = relativePath.substring(rootPath.length() + 1);
+			}
+			System.out.println("  " + (i + 1) + ". " + relativePath);
 		}
 		System.out.println();
 
@@ -146,8 +157,12 @@ public class PDFImgExtractor extends PDFGraphicsStreamEngine {
 
 		for (int i = 0; i < pdfFiles.size(); i++) {
 			File pdfFile = pdfFiles.get(i);
+			String relativePath = pdfFile.getAbsolutePath();
+			if (relativePath.startsWith(rootPath)) {
+				relativePath = relativePath.substring(rootPath.length() + 1);
+			}
 			System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-			System.out.println("Processing file " + (i + 1) + " of " + pdfFiles.size() + ": " + pdfFile.getName());
+			System.out.println("Processing file " + (i + 1) + " of " + pdfFiles.size() + ": " + relativePath);
 			System.out.println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 			try {
 				PDFImgExtractor extractor = new PDFImgExtractor(null);
