@@ -16,9 +16,9 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 /**
- * ImageToPdfAssembler - Assembles PNG images into a portrait letter-sized PDF
+ * ImageToPdfAssembler - Assembles image files into a portrait letter-sized PDF
  *
- * This tool scans a directory for all PNG files and creates a PDF with one
+ * This tool scans a directory for all PNG and JPG files and creates a PDF with one
  * image per page, ordered by natural sort (so page7 comes before page12).
  *
  * Images are automatically rotated 90° if doing so reduces whitespace (i.e.,
@@ -33,8 +33,8 @@ public class ImageToPdfAssembler {
 	// Letter size in points (1 inch = 72 points)
 	private static final PDRectangle LETTER = PDRectangle.LETTER; // 8.5" x 11"
 
-	// Pattern to match any PNG file
-	private static final Pattern FILE_PATTERN = Pattern.compile("^.+\\.png$", Pattern.CASE_INSENSITIVE);
+	// Pattern to match PNG, JPG, and JPEG files
+	private static final Pattern FILE_PATTERN = Pattern.compile("^.+\\.(png|jpe?g)$", Pattern.CASE_INSENSITIVE);
 
 	public static void main(String[] args) {
 		if (args.length != 2) {
@@ -50,7 +50,7 @@ public class ImageToPdfAssembler {
 			List<ImageFile> imageFiles = findAndSortImages(inputDirectory);
 
 			if (imageFiles.isEmpty()) {
-				System.err.println("No PNG files found in directory: " + inputDirectory);
+				System.err.println("No PNG or JPG files found in directory: " + inputDirectory);
 				System.exit(1);
 			}
 
@@ -71,7 +71,7 @@ public class ImageToPdfAssembler {
 	}
 
 	/**
-	 * Find all PNG files and sort them using natural sort order,
+	 * Find all PNG and JPG files and sort them using natural sort order,
 	 * so that e.g. page7 comes before page12.
 	 */
 	private static List<ImageFile> findAndSortImages(String directoryPath) throws IOException {
@@ -218,9 +218,7 @@ public class ImageToPdfAssembler {
 						);
 						cs.drawImage(image, 0, 0, imgW, imgH);
 
-						if (rotate) {
-							System.out.println("  → Rotated 90° CCW for better page coverage");
-						}
+						System.out.println("  → Rotated 90° CCW for better page coverage");
 					} else {
 						cs.drawImage(image, x, y, scaledWidth, scaledHeight);
 					}
