@@ -186,40 +186,47 @@ public class PDFImgExtractor extends PDFGraphicsStreamEngine {
 
 	public void extractImages(File pdfFile) {
 		try (PDDocument document = PDDocument.load(pdfFile)) {
-			this.pdfRenderer = new PDFRenderer(document);
-
-			System.out.println("Processing PDF: " + pdfFile.getName());
-			System.out.println("Total pages: " + document.getNumberOfPages());
-
-			this.baseName = pdfFile.getName().replaceFirst("[.][^.]+$", "");
-
-			String parentDir = pdfFile.getParent() != null ? pdfFile.getParent() : ".";
-			File outputDirFile = new File(parentDir, this.baseName);
-			if (!outputDirFile.exists() && !outputDirFile.mkdirs()) {
-				System.err.println("Error: Could not create output directory: " + outputDirFile.getAbsolutePath());
-				return;
-			}
-			this.outputDir = outputDirFile.getAbsolutePath();
-			System.out.println("Output folder: " + this.outputDir);
-
-			int totalPages = document.getNumberOfPages();
-
-			for (int pageNum = 0; pageNum < totalPages; pageNum++) {
-				this.currentPageNum = pageNum + 1;
-				PDPage page = document.getPage(pageNum);
-				extractFromPage(page);
-			}
-
-			System.out.println("\nExtraction complete!");
-			System.out.println("Unique images extracted:       " + imageCounter);
-			System.out.println("Cross-page duplicates skipped: " + skippedDuplicateCount);
-
-			identifyAndRemoveFurniture();
-
+			extractImages(document, pdfFile);
 		} catch (IOException e) {
 			System.err.println("Error processing PDF: " + e.getMessage());
 			e.printStackTrace();
 		}
+	}
+
+	/**
+	 * Extract images from an already-loaded document. The caller owns the
+	 * document and is responsible for closing it. Used by {@link PDFExtractor}
+	 * so each PDF is only loaded once for both image and text extraction.
+	 */
+	public void extractImages(PDDocument document, File pdfFile) throws IOException {
+		this.pdfRenderer = new PDFRenderer(document);
+
+		System.out.println("Processing PDF: " + pdfFile.getName());
+		System.out.println("Total pages: " + document.getNumberOfPages());
+
+		this.baseName = pdfFile.getName().replaceFirst("[.][^.]+$", "");
+
+		String parentDir = pdfFile.getParent() != null ? pdfFile.getParent() : ".";
+		File outputDirFile = new File(parentDir, this.baseName);
+		if (!outputDirFile.exists() && !outputDirFile.mkdirs()) {
+			throw new IOException("Could not create output directory: " + outputDirFile.getAbsolutePath());
+		}
+		this.outputDir = outputDirFile.getAbsolutePath();
+		System.out.println("Output folder: " + this.outputDir);
+
+		int totalPages = document.getNumberOfPages();
+
+		for (int pageNum = 0; pageNum < totalPages; pageNum++) {
+			this.currentPageNum = pageNum + 1;
+			PDPage page = document.getPage(pageNum);
+			extractFromPage(page);
+		}
+
+		System.out.println("\nExtraction complete!");
+		System.out.println("Unique images extracted:       " + imageCounter);
+		System.out.println("Cross-page duplicates skipped: " + skippedDuplicateCount);
+
+		identifyAndRemoveFurniture();
 	}
 
 	/**

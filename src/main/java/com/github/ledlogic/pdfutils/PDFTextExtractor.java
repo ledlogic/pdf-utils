@@ -75,48 +75,63 @@ public class PDFTextExtractor {
         
         // Load the PDF document
         try (PDDocument document = PDDocument.load(pdfFile)) {
-            
-            // Create custom text stripper with font tracking
-            FontTrackingStripper stripper = new FontTrackingStripper();
-            
-            // Configure stripper to preserve some formatting
-            stripper.setSortByPosition(true);
-            stripper.setLineSeparator("\n");
-            
-            // Extract text from all pages
-            String text = stripper.getText(document);
-            
-            // Get font statistics
-            Map<String, Integer> fontCounts = stripper.getFontCounts();
-            int totalChars = stripper.getTotalCharacters();
-            
-            // Clean up the text (remove excessive blank lines)
-            text = cleanText(text);
-            
-            // Write to output file
-            try (FileWriter writer = new FileWriter(outputPath)) {
-                // Add markdown header
-                writer.write("# Extracted Text from PDF\n\n");
-                writer.write("**Source:** " + pdfFile.getName() + "\n\n");
-                writer.write("**Pages:** " + document.getNumberOfPages() + "\n\n");
-                writer.write("---\n\n");
-                
-                // Write the extracted text
-                writer.write(text);
-            }
-            
-            // Write font statistics to log file
-            String fontLogPath = outputPath.replace(".md", "_fonts.log");
-            writeFontLog(fontLogPath, fontCounts, totalChars, pdfFile.getName());
-            
-            System.out.println("Text extraction complete!");
-            System.out.println("Input: " + pdfPath);
-            System.out.println("Output: " + outputPath);
-            System.out.println("Font log: " + fontLogPath);
-            System.out.println("Pages processed: " + document.getNumberOfPages());
-            System.out.println("Total characters: " + totalChars);
-            System.out.println("Unique fonts: " + fontCounts.size());
+            extractTextToMarkdown(document, pdfFile, outputPath);
         }
+    }
+
+    /**
+     * Extracts text from an already-loaded document. The caller owns the
+     * document and is responsible for closing it. Used by {@link PDFExtractor}
+     * so each PDF is only loaded once for both image and text extraction.
+     *
+     * @param document   The loaded PDF document
+     * @param pdfFile    The source PDF file (used for naming/reporting)
+     * @param outputPath Path to the output markdown file
+     * @throws IOException if file operations fail
+     */
+    public static void extractTextToMarkdown(PDDocument document, File pdfFile, String outputPath) throws IOException {
+        String pdfPath = pdfFile.getPath();
+
+        // Create custom text stripper with font tracking
+        FontTrackingStripper stripper = new FontTrackingStripper();
+        
+        // Configure stripper to preserve some formatting
+        stripper.setSortByPosition(true);
+        stripper.setLineSeparator("\n");
+        
+        // Extract text from all pages
+        String text = stripper.getText(document);
+        
+        // Get font statistics
+        Map<String, Integer> fontCounts = stripper.getFontCounts();
+        int totalChars = stripper.getTotalCharacters();
+        
+        // Clean up the text (remove excessive blank lines)
+        text = cleanText(text);
+        
+        // Write to output file
+        try (FileWriter writer = new FileWriter(outputPath)) {
+            // Add markdown header
+            writer.write("# Extracted Text from PDF\n\n");
+            writer.write("**Source:** " + pdfFile.getName() + "\n\n");
+            writer.write("**Pages:** " + document.getNumberOfPages() + "\n\n");
+            writer.write("---\n\n");
+            
+            // Write the extracted text
+            writer.write(text);
+        }
+        
+        // Write font statistics to log file
+        String fontLogPath = outputPath.replace(".md", "_fonts.log");
+        writeFontLog(fontLogPath, fontCounts, totalChars, pdfFile.getName());
+        
+        System.out.println("Text extraction complete!");
+        System.out.println("Input: " + pdfPath);
+        System.out.println("Output: " + outputPath);
+        System.out.println("Font log: " + fontLogPath);
+        System.out.println("Pages processed: " + document.getNumberOfPages());
+        System.out.println("Total characters: " + totalChars);
+        System.out.println("Unique fonts: " + fontCounts.size());
     }
 
     /**
@@ -234,7 +249,7 @@ public class PDFTextExtractor {
      * @param pdfPath The input PDF file path
      * @return The output markdown file path
      */
-    private static String generateOutputPath(String pdfPath) {
+    static String generateOutputPath(String pdfPath) {
         // Remove .pdf extension (case insensitive) and add .md
         if (pdfPath.toLowerCase().endsWith(".pdf")) {
             return pdfPath.substring(0, pdfPath.length() - 4) + ".md";

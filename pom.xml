@@ -81,6 +81,28 @@
           <execution>
             <phase>package</phase>
             <goals><goal>shade</goal></goals>
+            <configuration>
+              <!-- Strip signature files from signed dependencies (e.g. BouncyCastle);
+                   left in, they make the shaded jar fail with
+                   "Invalid signature file digest for Manifest main attributes". -->
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                    <exclude>META-INF/*.EC</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <!-- `java -jar target/pdf-utils-1.0.0-SNAPSHOT.jar <pdf-or-folder>` runs the combined extractor -->
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>com.github.ledlogic.pdfutils.PDFExtractor</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
           </execution>
         </executions>
       </plugin>
